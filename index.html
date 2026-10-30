@@ -901,6 +901,8 @@ function getCurrentDreamWorldAvatar(){
   try{
     const shared=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}');
     if(shared.avatarSvg&&shared.avatarSvg.trim().startsWith('<svg'))return {svg:shared.avatarSvg,name:shared.username||'Dreamer',id:shared.playerId||1};
+    const raw=localStorage.getItem('dreamWorldSaveV1');
+    if(raw){const state=JSON.parse(raw);if(state&&state.playerName){return null;}}
   }catch(e){}
   return null;
 }
@@ -930,7 +932,7 @@ function barkPuppy(){
   if(pup){pup.style.animation='puppyRun .32s ease-in-out 2';setTimeout(()=>{if(pup.isConnected)pup.style.animation=''},700)}
   toast('Your puppy is happy to see you! 🐶💖');
 }
-function refreshMascotViews(){renderPuppy('homeHero');renderPuppy('loadHero');if($('customPreview'))$('customPreview').innerHTML=puppySVG();}
+function refreshMascotViews(){refreshSharedDreamCharacter();renderPuppy('homeHero');renderPuppy('loadHero');if($('customPreview'))$('customPreview').innerHTML=puppySVG();}
 
 const backgroundOptions=[
  {id:'garden',name:'Sunny Garden',emoji:'🌼',desc:'The classic happy garden'},
