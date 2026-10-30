@@ -442,7 +442,7 @@ html:has(#online.screen.active),body:has(#online.screen.active),#app:has(#online
 })();
 
 function getSharedDreamAvatar(){try{const d=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}');return d.avatarSvg||''}catch(e){return ''}}
-function openMyPlayer(){let shared={};try{shared=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}')}catch(e){}const name=shared.username||document.getElementById('authUsername')?.value||localStorage.getItem('dwOnlineUsername')||'My Player';const id=shared.playerId?'Player ID '+shared.playerId:(localStorage.getItem('dwOnlinePlayerId')||'Player profile');document.getElementById('myPlayerName').textContent=name;document.getElementById('homePlayerName').textContent=name;document.getElementById('myPlayerId').textContent=id;document.getElementById('homePlayerId').textContent=id;const art=shared.avatarSvg||'';document.getElementById('myPlayerArt').innerHTML=art;document.getElementById('homeHero').innerHTML=art;showScreen('myPlayer')}
+function openMyPlayer(){refreshSharedDreamCharacter();let shared={};try{shared=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}')}catch(e){}const name=shared.username||document.getElementById('authUsername')?.value||localStorage.getItem('dwOnlineUsername')||'My Player';const id=shared.playerId?'Player ID '+shared.playerId:(localStorage.getItem('dwOnlinePlayerId')||'Player profile');document.getElementById('myPlayerName').textContent=name;document.getElementById('homePlayerName').textContent=name;document.getElementById('myPlayerId').textContent=id;document.getElementById('homePlayerId').textContent=id;const art=shared.avatarSvg&&shared.avatarSvg.trim().startsWith('<svg')?shared.avatarSvg:puppySVG();document.getElementById('myPlayerArt').innerHTML=art;document.getElementById('homeHero').innerHTML=art;showScreen('myPlayer')}
 (function(){try{const reduce=localStorage.getItem('dwOnlineReduceMotion')==='1';document.documentElement.classList.toggle('reduce-motion',reduce);const c=document.getElementById('reduceMotionSetting');if(c)c.checked=reduce;const shared=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}');if(shared.username){const n=document.getElementById('homePlayerName');if(n)n.textContent=shared.username;const p=document.getElementById('homePlayerId');if(p)p.textContent=shared.playerId?'Player ID '+shared.playerId:'Shared player';}const art=shared.avatarSvg||'';if(art){const h=document.getElementById('homeHero');if(h)h.innerHTML=art;const preview=document.getElementById('customPreview');if(preview)preview.innerHTML=art;const profile=document.getElementById('myPlayerArt');if(profile)profile.innerHTML=art;}}catch(e){}})();
 window.addEventListener('storage',e=>{if(e.key==='dreamWorldSharedPlayer'){try{const d=JSON.parse(e.newValue||'{}');if(d.avatarSvg){const h=document.getElementById('homeHero');if(h)h.innerHTML=d.avatarSvg;const p=document.getElementById('customPreview');if(p)p.innerHTML=d.avatarSvg;const m=document.getElementById('myPlayerArt');if(m)m.innerHTML=d.avatarSvg;}if(d.username){const n=document.getElementById('homePlayerName');if(n)n.textContent=d.username;}}catch(err){}}});
 </script>
@@ -889,20 +889,21 @@ function puppySVG(){
 function refreshSharedDreamCharacter(){
   const shared=getCurrentDreamWorldAvatar();
   const name=shared?.name||'My Player';
-  const pid=shared?.id?'Player ID: '+shared.id:'Your player profile';
+  const pid=shared?.id?'Player ID: '+shared.id:'Open regular Dream World to sync';
   const n=$('homePlayerName'),p=$('homePlayerId');
   if(n)n.textContent=name;if(p)p.textContent=pid;
-  ['homeHero','customPreview','myPlayerArt'].forEach(id=>{const el=$(id);if(el){if(shared){el.innerHTML=shared.svg;el.dataset.avatarSource='regular-dream-world';}else if(id!=='homeHero'||!el.querySelector('svg')){el.innerHTML=puppySVG();}}});
+  ['homeHero','customPreview','myPlayerArt'].forEach(id=>{const el=$(id);if(el){if(shared){el.innerHTML=shared.svg;el.dataset.avatarSource='regular-dream-world';}else{el.innerHTML=puppySVG();el.dataset.avatarSource='waiting-for-sync';}}});
 }
 window.addEventListener('storage',e=>{if(e.key==='dreamWorldSharedPlayer')refreshSharedDreamCharacter()});
 window.addEventListener('pageshow',()=>refreshSharedDreamCharacter());
 window.addEventListener('focus',()=>refreshSharedDreamCharacter());
+window.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshSharedDreamCharacter()});
+setInterval(()=>{if(!document.hidden)refreshSharedDreamCharacter()},1500);
 function getCurrentDreamWorldAvatar(){
   try{
     const shared=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}');
-    if(shared.avatarSvg&&shared.avatarSvg.trim().startsWith('<svg'))return {svg:shared.avatarSvg,name:shared.username||'Dreamer',id:shared.playerId||1};
-    const raw=localStorage.getItem('dreamWorldSaveV1');
-    if(raw){const state=JSON.parse(raw);if(state&&state.playerName){return null;}}
+    const svg=typeof shared.avatarSvg==='string'?shared.avatarSvg.trim():'';
+    if(svg.startsWith('<svg'))return {svg,name:shared.username||'Dreamer',id:shared.playerId||null};
   }catch(e){}
   return null;
 }
