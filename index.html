@@ -126,6 +126,9 @@ button:active{transform:translateY(3px) scale(.98);box-shadow:0 2px 0 #153f7440}
 #homeHero>svg,#customPreview>svg,#myPlayerArt>svg{display:block!important;width:min(100%,190px)!important;height:auto!important;max-height:230px!important;overflow:visible!important}.home-player-art>svg{display:block!important;width:100%!important;height:auto!important;max-height:150px!important;overflow:visible!important}
 
 .avatar-sync-placeholder{box-sizing:border-box;width:100%;min-height:145px;padding:15px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:2px dashed #a9b6ed;border-radius:18px;background:linear-gradient(135deg,#f1fbff,#fff0fa);color:#4d4a83;text-align:center}.avatar-sync-symbol{font-size:2.2rem;color:#9b72ec}.avatar-sync-placeholder strong{font-size:.95rem}.avatar-sync-placeholder small{max-width:260px;font-size:.75rem;line-height:1.35;color:#74739d}.avatar-sync-placeholder a{display:inline-block;margin-top:4px;padding:7px 12px;border-radius:12px;background:#5a91ef;color:white;font-weight:900;text-decoration:none}
+
+/* All online character render requests use the shared avatar, never the legacy puppy. */
+#homeHero,#customPreview,#myPlayerArt{display:grid;place-items:center}#homeHero>svg,#customPreview>svg,#myPlayerArt>svg{width:min(100%,190px)!important;height:auto!important;max-height:230px!important;display:block!important}
 </style>
 <style id="esther-deluxe-design">
 :root{--navy:#14396f;--blue:#177be0;--pink:#f34f9e;--purple:#7951dc;--gold:#ffb929;--green:#27c86b}
@@ -876,6 +879,10 @@ const art={
 }
 
 function puppySVG(){
+  const shared=getCurrentDreamWorldAvatar();
+  if(shared)return shared.svg;
+  return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 180" role="img" aria-label="Sync your Dream World character"><rect x="5" y="5" width="210" height="170" rx="26" fill="#eef7ff" stroke="#a9b6ed" stroke-width="4" stroke-dasharray="9 7"/><text x="110" y="76" text-anchor="middle" font-size="42" fill="#9b72ec">✦</text><text x="110" y="111" text-anchor="middle" font-size="15" font-weight="bold" fill="#4d4a83">SYNC CHARACTER</text><text x="110" y="135" text-anchor="middle" font-size="11" fill="#74739d">from Dream World</text></svg>';
+
  try{const shared=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}');if(shared.avatarSvg&&shared.avatarSvg.indexOf('<svg')===0)return shared.avatarSvg;}catch(e){}
 
  const species={
@@ -923,13 +930,13 @@ function renderPuppy(id){
     else{el.innerHTML='<div class="avatar-sync-placeholder"><div class="avatar-sync-symbol">✦</div><strong>Dream World character</strong><small>Open regular Dream World first to sync your saved look.</small><a href="https://pumpkinhacker.github.io/DreamWorld/" target="_blank" rel="noopener">Open Dream World</a></div>';el.dataset.avatarSource='not-synced';}
   }catch(err){
     console.error('Dream World puppy display fallback:',err);
-    el.innerHTML='<div aria-label="Puppy" style="font-size:clamp(100px,22vw,180px);line-height:1;filter:drop-shadow(0 8px 4px #3454a633)">🐶</div>';
+    el.innerHTML='<div class="avatar-sync-placeholder"><strong>Character unavailable</strong><small>Open regular Dream World and save your look.</small></div>';
   }
   if(id==='homeHero'){
     el.style.cursor='pointer';
     el.setAttribute('role','button');
-    el.setAttribute('aria-label','Tap the puppy to hear a happy bark');
-    el.onclick=barkPuppy;
+    el.setAttribute('aria-label','Your shared Dream World character');
+    el.onclick=null;
   }
 }
 function barkPuppy(){
