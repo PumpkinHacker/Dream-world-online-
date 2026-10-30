@@ -642,8 +642,9 @@ html,body{height:100%;overflow:hidden!important}
 #online.screen.active #onlineWorldArea .online-avatar.is-running .pet{animation:none!important;transform-origin:50% 100%;}
 
 #online.screen.active #onlineWorldArea .online-avatar .pet svg{transform-origin:50% 100%;}
-#online.screen.active #onlineWorldArea .online-avatar.is-facing-left .pet svg{transform:scaleX(-1)!important;}
-#online.screen.active #onlineWorldArea .online-avatar.is-facing-right .pet svg{transform:scaleX(1)!important;}
+#online.screen.active #onlineWorldArea .online-avatar .pet svg{transform-origin:50% 50%;transform-style:preserve-3d;backface-visibility:visible;transition:transform .16s ease-out!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-facing-left .pet svg{transform:perspective(420px) rotateY(-68deg)!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-facing-right .pet svg{transform:perspective(420px) rotateY(68deg)!important;}
 #online.screen.active #onlineWorldArea .online-avatar.is-walking .pet .avatar-arms,
 #online.screen.active #onlineWorldArea .online-avatar.is-running .pet .avatar-arms{transform-box:fill-box;transform-origin:50% 18%;animation:onlineArmSwing .48s ease-in-out infinite!important;}
 #online.screen.active #onlineWorldArea .online-avatar.is-running .pet .avatar-arms{animation-duration:.25s!important;}
