@@ -638,6 +638,9 @@ html,body{height:100%;overflow:hidden!important}
 }
 </style><style id="online-only-walk-run-animations">/* Online World: disable every legacy, decorative, idle, blink, and transition animation. Only the local player gait may animate. */ #online.screen.active #onlineWorldArea *, #online.screen.active #onlineWorldArea *::before, #online.screen.active #onlineWorldArea *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } #online.screen.active #onlineWorldArea .online-avatar { will-change: auto !important; } #online.screen.active #onlineWorldArea .online-avatar .pet { animation: none !important; } #online.screen.active #onlineWorldArea .online-avatar.is-walking .pet { animation: onlineWalkGait .48s ease-in-out infinite !important; transform-origin: 50% 100%; will-change: transform; } #online.screen.active #onlineWorldArea .online-avatar.is-running .pet { animation: onlineRunGait .23s ease-in-out infinite !important; transform-origin: 50% 100%; will-change: transform; }
 /* True directional gait: animate the SVG's real arms and legs, not the whole character wobble. */
+#online.screen.active #onlineWorldArea .online-avatar.is-walking .pet,
+#online.screen.active #onlineWorldArea .online-avatar.is-running .pet{animation:none!important;transform-origin:50% 100%;}
+
 #online.screen.active #onlineWorldArea .online-avatar .pet svg{transform-origin:50% 100%;}
 #online.screen.active #onlineWorldArea .online-avatar.is-facing-left .pet svg{transform:scaleX(-1)!important;}
 #online.screen.active #onlineWorldArea .online-avatar.is-facing-right .pet svg{transform:scaleX(1)!important;}
