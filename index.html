@@ -636,7 +636,35 @@ html,body{height:100%;overflow:hidden!important}
  border-radius:14px!important;background:linear-gradient(#a994ff,#6f52df)!important;
  box-shadow:0 4px 0 #39228b55!important
 }
-</style><style id="online-only-walk-run-animations">/* Online World: disable every legacy, decorative, idle, blink, and transition animation. Only the local player gait may animate. */ #online.screen.active #onlineWorldArea *, #online.screen.active #onlineWorldArea *::before, #online.screen.active #onlineWorldArea *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } #online.screen.active #onlineWorldArea .online-avatar { will-change: auto !important; } #online.screen.active #onlineWorldArea .online-avatar .pet { animation: none !important; } #online.screen.active #onlineWorldArea .online-avatar.is-walking .pet { animation: onlineWalkGait .48s ease-in-out infinite !important; transform-origin: 50% 100%; will-change: transform; } #online.screen.active #onlineWorldArea .online-avatar.is-running .pet { animation: onlineRunGait .23s ease-in-out infinite !important; transform-origin: 50% 100%; will-change: transform; }</style></head>
+</style><style id="online-only-walk-run-animations">/* Online World: disable every legacy, decorative, idle, blink, and transition animation. Only the local player gait may animate. */ #online.screen.active #onlineWorldArea *, #online.screen.active #onlineWorldArea *::before, #online.screen.active #onlineWorldArea *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; } #online.screen.active #onlineWorldArea .online-avatar { will-change: auto !important; } #online.screen.active #onlineWorldArea .online-avatar .pet { animation: none !important; } #online.screen.active #onlineWorldArea .online-avatar.is-walking .pet { animation: onlineWalkGait .48s ease-in-out infinite !important; transform-origin: 50% 100%; will-change: transform; } #online.screen.active #onlineWorldArea .online-avatar.is-running .pet { animation: onlineRunGait .23s ease-in-out infinite !important; transform-origin: 50% 100%; will-change: transform; }
+/* True directional gait: animate the SVG's real arms and legs, not the whole character wobble. */
+#online.screen.active #onlineWorldArea .online-avatar .pet svg{transform-origin:50% 100%;}
+#online.screen.active #onlineWorldArea .online-avatar.is-facing-left .pet svg{transform:scaleX(-1)!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-facing-right .pet svg{transform:scaleX(1)!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-walking .pet .avatar-arms,
+#online.screen.active #onlineWorldArea .online-avatar.is-running .pet .avatar-arms{transform-box:fill-box;transform-origin:50% 18%;animation:onlineArmSwing .48s ease-in-out infinite!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-running .pet .avatar-arms{animation-duration:.25s!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-walking .pet .avatar-legs path,
+#online.screen.active #onlineWorldArea .online-avatar.is-running .pet .avatar-legs path{transform-box:fill-box;transform-origin:50% 12%;}
+#online.screen.active #onlineWorldArea .online-avatar.is-walking .pet .avatar-legs path:nth-child(odd){animation:onlineLegStep .48s ease-in-out infinite!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-walking .pet .avatar-legs path:nth-child(even){animation:onlineLegStep .48s ease-in-out -.24s infinite!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-running .pet .avatar-legs path:nth-child(odd){animation:onlineRunStep .25s ease-in-out infinite!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-running .pet .avatar-legs path:nth-child(even){animation:onlineRunStep .25s ease-in-out -.125s infinite!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-walking .pet .avatar-torso{transform-box:fill-box;transform-origin:50% 100%;animation:onlineTorsoWalk .48s ease-in-out infinite!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-running .pet .avatar-torso{transform-box:fill-box;transform-origin:50% 100%;animation:onlineTorsoRun .25s ease-in-out infinite!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-walking .pet .avatar-head{transform-box:fill-box;transform-origin:50% 90%;animation:onlineHeadWalk .48s ease-in-out infinite!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-running .pet .avatar-head{transform-box:fill-box;transform-origin:50% 90%;animation:onlineHeadRun .25s ease-in-out infinite!important;}
+#online.screen.active #onlineWorldArea .online-avatar.is-walking .pet .avatar-tail,
+#online.screen.active #onlineWorldArea .online-avatar.is-running .pet .avatar-tail{transform-box:fill-box;transform-origin:75% 80%;animation:onlineTailRun .38s ease-in-out infinite!important;}
+@keyframes onlineArmSwing{0%,100%{transform:rotate(24deg)}50%{transform:rotate(-24deg)}}
+@keyframes onlineLegStep{0%,100%{transform:rotate(-22deg) translateY(0)}50%{transform:rotate(22deg) translateY(2px)}}
+@keyframes onlineRunStep{0%,100%{transform:rotate(-38deg) translateY(-1px)}50%{transform:rotate(38deg) translateY(3px)}}
+@keyframes onlineTorsoWalk{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-2px) rotate(2deg)}}
+@keyframes onlineTorsoRun{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-6px) rotate(4deg)}}
+@keyframes onlineHeadWalk{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-2px) rotate(2deg)}}
+@keyframes onlineHeadRun{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-5px) rotate(4deg)}}
+@keyframes onlineTailRun{0%,100%{transform:rotate(-18deg)}50%{transform:rotate(22deg)}}
+</style></head>
 <body><div id="app">
 <div id="playerHud" aria-live="polite"><span id="playerIdLabel">Player ID: —</span><span id="fpsLabel">FPS: —</span></div><button id="logoutBtn" type="button" onclick="logoutDreamWorld()" aria-label="Log out of Dream World">↪ Log out</button>
 <div id="scenery"><div class="cloud" style="top:10%;left:10%"></div><div class="cloud" style="top:24%;left:60%;animation-delay:-14s;transform:scale(.7)"></div><div class="hill"></div><div class="hill h2"></div><div class="flowerfield"></div></div>
@@ -804,7 +832,7 @@ function tickOnlineMovement(){
   else{onlineGrounded=false;onlineJumpVelocity=Math.max(0,onlineJumpVelocity)}
  }
  updateOnlineCoinTrails(now);collectOnlineCoins();for(const coin of [...onlineAdminCoins]){if(coin.createdAt&&now-coin.createdAt>9000){coin.el.remove();onlineAdminCoins=onlineAdminCoins.filter(x=>x.id!==coin.id)}}const marker=markers.querySelector('.is-me');
- if(marker){marker.style.left=onlineX+'%';marker.style.top=onlineY+'%';const moving=Math.abs(window.onlineVelocityX||0);marker.classList.toggle('is-running',onlineGrounded&&moving>2.05);marker.classList.toggle('is-walking',onlineGrounded&&moving>.22&&moving<=2.05);marker.classList.toggle('is-idle',moving<=.22)}
+ if(marker){marker.style.left=onlineX+'%';marker.style.top=onlineY+'%';const velocity=Number(window.onlineVelocityX)||0;const moving=Math.abs(velocity);marker.classList.toggle('is-running',onlineGrounded&&moving>2.05);marker.classList.toggle('is-walking',onlineGrounded&&moving>.22&&moving<=2.05);marker.classList.toggle('is-idle',moving<=.22);if(moving>.22){marker.classList.toggle('is-facing-left',velocity<0);marker.classList.toggle('is-facing-right',velocity>0)}else{marker.classList.remove('is-facing-left','is-facing-right')}}
  const playerPixel=cw*onlineX/100;viewport.scrollLeft=Math.max(0,Math.min(cw-viewport.clientWidth,playerPixel-viewport.clientWidth*.38));
  onlineMoveFrame=requestAnimationFrame(tickOnlineMovement);
 }
