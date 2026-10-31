@@ -287,7 +287,7 @@ button:disabled{cursor:not-allowed}
 .online-avatar{z-index:7;min-width:70px;gap:3px;transition:left .09s linear,top .09s linear}
 .online-avatar .pet{
   display:flex;align-items:flex-end;justify-content:center;
-  width:64px;height:61px;padding-bottom:1px;
+  width:68px;height:74px;padding-bottom:1px;
   filter:drop-shadow(0 4px 0 #315c7a38);
 }
 .online-avatar .pet svg{width:64px!important;height:70px!important;max-width:none!important;overflow:visible;preserveAspectRatio:xMidYMax meet}
@@ -824,6 +824,7 @@ function sanitizeOnlineAvatarSvg(raw){
   };
   const safe=clean(root);if(!safe)return '';
   safe.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  safe.setAttribute('preserveAspectRatio','xMidYMax meet');
   return new XMLSerializer().serializeToString(safe);
  }catch(e){return ''}
 }
