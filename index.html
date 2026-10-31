@@ -717,7 +717,7 @@ html,body{height:100%;overflow:hidden!important}
 </div></section>
 <section id="settings" class="screen"><div class="panel"><div class="topbar"><button type="button" class="closebtn" onclick="showScreen('home')">‹</button><h2>⚙ Settings</h2><div style="width:43px"></div></div>
 <div class="settings-list">
-<div class="settings-row" id="dwVoiceSetting"><div><b>Natural voice narration</b><small>Choose the smoothest voice available on your device. Enhanced voices usually sound more natural.</small></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><label style="display:flex;gap:6px;align-items:center"><input id="dwVoiceEnabled" type="checkbox" checked> On / Off</label><select id="dwVoiceChoice" aria-label="Choose narration voice" class="smallbtn" style="max-width:190px"><option value="">Best available voice</option></select><button class="smallbtn" type="button" id="dwVoiceTest">▶ Preview voice</button></div></div>
+
 
 <div class="settings-row"><div><b>Background music</b><small>Removed. Sound effects can still be used.</small></div><span class="smallbtn" aria-label="Music off">🔇 Off</span></div>
 <div class="settings-row"><div><b>Reduce motion</b><small>Turn off extra menu animations</small></div><label><input id="reduceMotionSetting" type="checkbox" onchange="localStorage.setItem('dwOnlineReduceMotion',this.checked?'1':'0');document.documentElement.classList.toggle('reduce-motion',this.checked)"> On / Off</label></div>
@@ -1156,8 +1156,9 @@ async function resumeAuthSession(){
     if(!res.ok){if(res.status===401||res.status===403){localStorage.removeItem('dreamWorldSessionV1');localStorage.removeItem('dreamWorldPlayerIdV1');showAuth();$('authError').textContent='Your session expired. Please log in again.';return}throw new Error('Account server temporarily unavailable ('+res.status+').')}
     if(!data.player)throw new Error('The server response was incomplete.');
     authSession=token;setPlayerHud(data.player.playerId);await loadServerTokenBalance();showScreen('home');refreshAdminAccess();
-  }catch(e){const cachedId=localStorage.getItem('dreamWorldPlayerIdV1');if(cachedId){authSession=token;setPlayerHud(cachedId);showScreen('home');console.warn('Session check unavailable; kept cached sign-in.')}else{$('authError').textContent='Can’t reach the account server. Your login has been kept—reload to retry.';showAuth()}}
+  }catch(e){const cachedId=localStorage.getItem('dreamWorldPlayerIdV1');authSession=token;if(cachedId){setPlayerHud(cachedId)}else{$('playerIdLabel').textContent='Restoring account…';$('playerHud').style.display='flex';$('logoutBtn').style.display='block'}showScreen('home');console.warn('Account server temporarily unavailable; preserving the saved sign-in and keeping the account locked.')}
 }
+window.addEventListener('online',()=>{if(localStorage.getItem('dreamWorldSessionV1'))resumeAuthSession()});window.addEventListener('focus',()=>{if(localStorage.getItem('dreamWorldSessionV1'))resumeAuthSession()});
 async function submitAuth(event){
   event.preventDefault();
   const username=$('authUsername').value.trim(),password=$('authPassword').value;
@@ -1714,64 +1715,5 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
 })();
 </script>
 
-<script id="dw-gentle-voice">
-(function(){
-  const KEY='dwGentleVoiceEnabledV1',VOICE_KEY='dwNaturalVoiceChoiceV2';
-  let enabled=localStorage.getItem(KEY)!=='0',voices=[],preferred=localStorage.getItem(VOICE_KEY)||'';
-  const synth=window.speechSynthesis;
-  function isEnglish(v){return /^en([-_]|$)/i.test(v.lang||'')}
-  function voiceScore(v){
-    const n=(v.name||'').toLowerCase();let score=0;
-    if(isEnglish(v))score+=40;
-    if(/enhanced|premium|natural|neural|siri/i.test(n))score+=100;
-    if(/samantha|ava|zoe|jenny|aria|zira|susan|karen|victoria|serena|moira|tessa|libby|sonia|natasha|sara|allison|joanna|emma|amy|olivia/i.test(n))score+=35;
-    if(v.localService)score+=8;
-    if(/compact|robot|novelty/i.test(n))score-=80;
-    return score;
-  }
-  function loadVoices(){
-    if(!synth)return;
-    voices=synth.getVoices()||[];
-    const picker=document.getElementById('dwVoiceChoice');if(!picker)return;
-    const available=voices.filter(isEnglish).sort((a,b)=>voiceScore(b)-voiceScore(a));
-    picker.innerHTML='<option value="">Best natural voice</option>';
-    available.forEach(v=>{const o=document.createElement('option');o.value=v.voiceURI;o.textContent=v.name+(v.lang?' · '+v.lang:'');picker.appendChild(o)});
-    if(preferred&&available.some(v=>v.voiceURI===preferred))picker.value=preferred;
-    else {preferred='';picker.value=''}
-  }
-  function selectedVoice(){
-    if(preferred){const exact=voices.find(v=>v.voiceURI===preferred);if(exact)return exact}
-    return voices.filter(isEnglish).sort((a,b)=>voiceScore(b)-voiceScore(a))[0]||voices[0]||null;
-  }
-  if(synth){loadVoices();synth.addEventListener('voiceschanged',loadVoices)}
-  window.dwSpeak=function(message){
-    if(!enabled||!synth||!message)return;
-    try{
-      synth.cancel();
-      const clean=String(message).replace(/<[^>]*>/g,' ').replace(/[🎃🐾✨🏆⭐💖🌟🛸🔒🎁]/g,' ').replace(/\s+/g,' ').trim();
-      if(!clean)return;
-      const utterance=new SpeechSynthesisUtterance(clean.slice(0,420)),voice=selectedVoice();
-      if(voice){utterance.voice=voice;utterance.lang=voice.lang||'en-US'}else utterance.lang='en-US';
-      utterance.rate=0.97;utterance.pitch=1.04;utterance.volume=0.92;
-      synth.speak(utterance);
-    }catch(e){}
-  };
-  window.dwSpeakScreen=function(id){
-    const labels={home:'Welcome to Dream World. What would you like to do today?',online:'You are in the Online World. Have fun exploring!',settings:'Settings. Choose your game preferences and voice.',levels:'Pick a level when you are ready for an adventure.',shop:'Welcome to the Star Shop. Take a look around!',word:'Word Drop. Spell the word on your screen.',myPlayer:'Here is your player profile.'};
-    if(labels[id])window.dwSpeak(labels[id]);
-  };
-  function setup(){
-    const toggle=document.getElementById('dwVoiceEnabled'),test=document.getElementById('dwVoiceTest'),picker=document.getElementById('dwVoiceChoice');
-    loadVoices();
-    if(toggle){toggle.checked=enabled;toggle.addEventListener('change',function(){enabled=!!toggle.checked;localStorage.setItem(KEY,enabled?'1':'0');if(!enabled&&synth)synth.cancel();else window.dwSpeak('Voice narration is now on.')})}
-    if(picker)picker.addEventListener('change',function(){preferred=picker.value;localStorage.setItem(VOICE_KEY,preferred);window.dwSpeak('This is your selected Dream World voice.');});
-    if(test)test.addEventListener('click',function(){
-      if(!synth){alert('Text to speech is not supported by this browser.');return}
-      if(!enabled){enabled=true;if(toggle)toggle.checked=true;localStorage.setItem(KEY,'1')}
-      window.dwSpeak('Hi there, and welcome to Dream World. I will help guide you through your adventure. You can change my voice any time in Settings.');
-    });
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',setup);else setup();
-})();
-</script>
+
 </body></html>
