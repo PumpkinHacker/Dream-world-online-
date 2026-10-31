@@ -993,17 +993,29 @@ function boot(){
     if(finished)return;
     finished=true;
     clearInterval(timer);
+    const wantsWorld=new URLSearchParams(location.search).has('world');
+    const hasToken=!!localStorage.getItem('dreamWorldSessionV1');
+    // Never leave the loading screen waiting for account/network requests.
+    if(wantsWorld&&hasToken){
+      showScreen('online');
+      try{showOnlineMaps()}catch(err){console.error('Online map startup issue:',err)}
+    }else if(wantsWorld){
+      showAuth();
+      $('authError').textContent='Log in from Dream World to enter the Online World.';
+    }else{
+      showScreen('home');
+    }
     try{await resumeAuthSession()}catch(err){console.error('Session restore issue:',err)}
-    if(new URLSearchParams(location.search).has('world')){
+    // Session restore can update the screen; return to the requested destination.
+    if(wantsWorld){
       if(localStorage.getItem('dreamWorldSessionV1')){
         showScreen('online');
-        showOnlineMaps();
+        try{showOnlineMaps()}catch(err){console.error('Online map startup issue:',err)}
       }else{
         showAuth();
         $('authError').textContent='Log in from Dream World to enter the Online World.';
       }
-    }else{
-      // Always leave the loading screen for the regular game, including returning players.
+    }else if(localStorage.getItem('dreamWorldSessionV1')){
       showScreen('home');
     }
   };
