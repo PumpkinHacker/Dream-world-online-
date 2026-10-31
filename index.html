@@ -290,7 +290,7 @@ button:disabled{cursor:not-allowed}
   width:64px;height:61px;padding-bottom:1px;
   filter:drop-shadow(0 4px 0 #315c7a38);
 }
-.online-avatar .pet svg{width:60px!important;height:56px!important;overflow:visible}
+.online-avatar .pet svg{width:64px!important;height:70px!important;max-width:none!important;overflow:visible;preserveAspectRatio:xMidYMax meet}
 .online-avatar .username{font-size:12px;border-width:2px;box-shadow:0 3px 0 #345a7b2a}
 .online-avatar.is-me .username{background:#fff1a8;border-color:#f3b62c}
 .online-sky-label{z-index:2;position:absolute;left:20px;top:14px;font-weight:1000;color:#2776a6;background:#ffffffb8;border:2px solid #fff;border-radius:14px;padding:5px 10px}
@@ -801,7 +801,40 @@ async function chooseOnlineSpawn(mapId){const token=localStorage.getItem('dreamW
 async function enterOnlineMap(mapId){if(!ONLINE_MAPS[mapId])return;refreshOnlineOutfitFromStorage();const token=localStorage.getItem('dreamWorldSessionV1');if(!token){showAuth();return}stopOnlineTimers(true);onlinePlayersRequestSeq++;onlineMapId=mapId;onlineX=8;onlineY=78;const spawn=await chooseOnlineSpawn(mapId);if(onlineMapId!==mapId)return;onlineX=spawn.x;onlineY=spawn.y;onlineJumpVelocity=0;onlineGrounded=true;onlineJumpHeld=false;onlineJumpCount=0;window.onlineVelocityX=0;$('onlineMapPicker').hidden=true;$('onlineWorldArea').hidden=false;$('onlineMapTitle').textContent=ONLINE_MAPS[mapId].title;$('onlineWorldCanvas').className='online-world-canvas '+ONLINE_MAPS[mapId].className;$('onlineStatus').textContent='Connecting…';$('onlinePlayerMarkers').innerHTML='';$('onlinePlayerList').textContent='Finding players…';$('onlineWorldViewport').scrollLeft=0;await syncOnlinePresence();onlineRefreshTimer=setInterval(loadOnlinePlayers,1200);onlineHeartbeatTimer=setInterval(syncOnlinePresence,900);onlineLastSentX=-999;onlineLastSentY=-999;onlineLastMoveAt=performance.now();onlineCachedCanvas=null;onlineCachedWidth=0;onlineCachedHeight=0;if(onlineMoveTimer)clearInterval(onlineMoveTimer);if(onlineMoveFrame)cancelAnimationFrame(onlineMoveFrame);onlineMoveFrame=requestAnimationFrame(tickOnlineMovement);loadOnlinePlayers()}
 async function syncOnlinePresence(){const token=localStorage.getItem('dreamWorldSessionV1'),mapAtStart=onlineMapId;if(!token||!mapAtStart||onlineRequestBusy)return;onlineRequestBusy=true;onlineLastSentX=onlineX;onlineLastSentY=onlineY;try{const res=await fetch(DREAMWORLD_API+'/online/presence',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({mapId:mapAtStart,x:onlineX,y:onlineY,dog:onlineDogData()}),cache:'no-store'});if(onlineMapId!==mapAtStart)return;if(res.status===401){stopOnlineTimers(false);$('onlineStatus').textContent='Please log in again';return}if(!res.ok)throw Error('Presence unavailable');$('onlineStatus').textContent='🟢 Online · live updates'}catch(e){if(onlineMapId===mapAtStart)$('onlineStatus').textContent='Connection issue — retrying shortly'}finally{onlineRequestBusy=false}}
 async function loadOnlinePlayers(){const token=localStorage.getItem('dreamWorldSessionV1'),mapAtStart=onlineMapId;if(!token||!mapAtStart)return;const requestSeq=++onlinePlayersRequestSeq;try{const res=await fetch(DREAMWORLD_API+'/online/players?map='+encodeURIComponent(mapAtStart),{headers:{Authorization:'Bearer '+token},cache:'no-store'});const data=await res.json();if(requestSeq!==onlinePlayersRequestSeq||mapAtStart!==onlineMapId)return;if(!res.ok)throw Error(data.error||'Could not load players');renderOnlinePlayers(Array.isArray(data.players)?data.players:[])}catch(e){if(requestSeq===onlinePlayersRequestSeq&&mapAtStart===onlineMapId)$('onlineStatus').textContent='Player list unavailable — retrying shortly'}}
-function dogSvgForData(dog){const old={selectedAnimal,col,skinName,accessory};try{const d=dog&&typeof dog==='object'?dog:{};selectedAnimal=['🐶','🐱','🐰','🦊','🐼','🐸','🦄','🐻','🦁','🐨','🦌','🐲','🐹','🦔'].includes(d.animal)?d.animal:'🐶';col=typeof d.fur==='string'&&(/^(#[0-9a-f]{3,8}|[a-z]+)$/i.test(d.fur)||['rainbow','unicorn','starlight','comet','opal','aurora'].includes(d.fur))?d.fur:'#42a5ed';skinName=typeof d.skin==='string'?d.skin.slice(0,40):'Classic Pup';accessory=typeof d.accessory==='string'?d.accessory.slice(0,8):'🎀';return puppySVG()}finally{selectedAnimal=old.selectedAnimal;col=old.col;skinName=old.skinName;accessory=old.accessory}}
+function sanitizeOnlineAvatarSvg(raw){
+ if(typeof raw!=='string'||raw.length>60000||!/^\s*<svg\b/i.test(raw))return '';
+ try{
+  const doc=new DOMParser().parseFromString(raw,'image/svg+xml'),root=doc.documentElement;
+  if(!root||root.localName!=='svg'||doc.querySelector('parsererror'))return '';
+  const tags=new Set(['svg','g','path','circle','ellipse','rect','line','polyline','polygon','defs','linearGradient','radialGradient','stop','clipPath','mask','text','tspan']);
+  const attrs=new Set(['viewBox','preserveAspectRatio','width','height','x','y','cx','cy','r','rx','ry','d','points','fill','fill-rule','stroke','stroke-width','stroke-linecap','stroke-linejoin','opacity','transform','offset','stop-color','stop-opacity','id','gradientUnits','gradientTransform','clip-path','mask','font-size','font-weight','font-family','text-anchor','dominant-baseline','letter-spacing']);
+  const clean=(node)=>{
+   if(node.nodeType!==1||!tags.has(node.localName))return null;
+   const el=document.createElementNS('http://www.w3.org/2000/svg',node.localName);
+   for(const a of [...node.attributes]){
+    if(!attrs.has(a.name))continue;
+    const v=a.value.trim();
+    if(/url\s*\(/i.test(v)&&!/^url\(#[\w.-]+\)$/.test(v))continue;
+    if(/javascript:|data:|https?:/i.test(v))continue;
+    el.setAttribute(a.name,v);
+   }
+   for(const child of [...node.children]){const c=clean(child);if(c)el.appendChild(c)}
+   if(['text','tspan'].includes(node.localName))el.textContent=node.textContent.slice(0,300);
+   return el;
+  };
+  const safe=clean(root);if(!safe)return '';
+  safe.setAttribute('xmlns','http://www.w3.org/2000/svg');
+  return new XMLSerializer().serializeToString(safe);
+ }catch(e){return ''}
+}
+function dogSvgForData(dog){
+ const d=dog&&typeof dog==='object'?dog:{};
+ const sharedArt=sanitizeOnlineAvatarSvg(d.avatarSvg);
+ if(sharedArt)return sharedArt;
+ const animal=['🐶','🐱','🐰','🦊','🐼','🐸','🦄','🐻','🦁','🐨','🦌','🐲','🐹','🦔'].includes(d.animal)?d.animal:'🐶';
+ const fur=typeof d.fur==='string'&&/^#[0-9a-f]{3,8}$/i.test(d.fur)?d.fur:'#42a5ed';
+ return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 112" role="img" aria-label="Player animal"><ellipse cx="50" cy="104" rx="25" ry="5" fill="#315c7a" opacity=".18"/><path d="M34 67 Q50 58 66 67 L72 98 Q50 105 28 98Z" fill="'+fur+'" stroke="#40577d" stroke-width="2.5"/><path d="M40 72 L50 80 L60 72" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="39" r="27" fill="'+fur+'" stroke="#40577d" stroke-width="2.5"/><text x="50" y="51" text-anchor="middle" font-size="37">'+animal+'</text><path d="M38 64 Q50 58 62 64" fill="none" stroke="#40577d" stroke-width="2.5" stroke-linecap="round"/></svg>';
+}
 function openPlayerProfile(id,username,dog){const mine=String(id)===String(playerId||localStorage.getItem('dreamWorldPlayerIdV1')||'');window.onlineProfileDog=dog||null;$('profilePlayerName').textContent='🐾 '+username;$('profileDogCaption').textContent=mine?'Your current Dream World character ✨':username+'’s character ✨';const stage=$('profileDogStage');let artwork='';if(mine){try{const shared=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}');if(typeof shared.avatarSvg==='string'&&shared.avatarSvg.trim().startsWith('<svg'))artwork=shared.avatarSvg}catch(e){}}if(!artwork)artwork=dogSvgForData(window.onlineProfileDog);stage.innerHTML=artwork;const svg=stage.querySelector('svg');if(svg){svg.classList.add('puppy');svg.removeAttribute('width');svg.removeAttribute('height');svg.style.width='min(78%,360px)';svg.style.maxHeight='80%';svg.style.height='auto';svg.style.display='block'}window.profileReturnScreen='online';showScreen('playerProfile')}
 function closePlayerProfile(){showScreen('online')}
 function editFromPlayerProfile(){showScreen('home')}
@@ -814,7 +847,11 @@ function startOnlineJump(event){if(event){event.preventDefault();try{event.curre
 function stopOnlineJump(event){if(event)event.preventDefault();onlineJumpHeld=false}
 
 function refreshOnlineOutfitFromStorage(){try{const raw=localStorage.getItem('estherDreamworldV5')||localStorage.getItem('estherDreamworldV4')||localStorage.getItem('estherDreamworldV3');const d=JSON.parse(raw||'null');if(!d)return;if(typeof d.selectedAnimal==='string')selectedAnimal=d.selectedAnimal;if(typeof d.col==='string')col=d.col;if(typeof d.skinName==='string')skinName=d.skinName;if(typeof d.accessory==='string')accessory=d.accessory}catch(e){}}
-function onlineDogData(){return {animal:selectedAnimal,fur:col,skin:skinName,accessory,updatedAt:Date.now()}}
+function onlineDogData(){
+ let avatarSvg='';
+ try{const shared=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}');if(typeof shared.avatarSvg==='string'&&shared.avatarSvg.length<=60000)avatarSvg=shared.avatarSvg}catch(e){}
+ return {animal:selectedAnimal,fur:col,skin:skinName,accessory,avatarSvg,updatedAt:Date.now()};
+}
 let onlineAdminSize=1,onlineAdminCoins=[],onlineAdminCoinId=0,onlineBlueTrail=false,onlineRedTrail=false,onlineCoinTrailLastAt=0;
 async function requestOnlineModMenu(){const token=localStorage.getItem('dreamWorldSessionV1');if(!token){toastOnline('Please log in first, then try the Admin Panel again.');return}const btn=document.querySelector('#onlineAdminFloat button');if(btn){btn.disabled=true;btn.textContent='⏳ Verifying…'}$('modalContent').innerHTML='<div style="font-size:2.3rem">🔐</div><h2>Verifying Admin Access…</h2><p>Checking your account admin permissions.</p><button type="button" class="bigbtn blue" onclick="closeModal()">Cancel</button>';$('modal').classList.add('show');try{const response=await fetch(DREAMWORLD_API+'/admin/me',{headers:{Authorization:'Bearer '+token},cache:'no-store',signal:AbortSignal.timeout(8000)});let data={};try{data=await response.json()}catch(e){}const accountId=data.accountId??data.playerId??data.id;const verified=response.ok&&data.isAdmin===true;if(verified){openOnlineAdminTools()}else{toastOnline(response.status===401?'Your session expired. Log in again and retry.':(data.message||'Admin access could not be verified. Make sure you are signed in to your authorized admin account.'))}}catch(e){toastOnline('Could not reach the admin service. Check your connection and try again.')}finally{if(btn){btn.disabled=false;btn.textContent='⚡ Admin Panel'}}}
 function toastOnline(message){$('modalContent').innerHTML='<h2>🌟 Dream World</h2><p>'+message+'</p><button type="button" class="bigbtn blue" onclick="closeModal()">Okay</button>';$('modal').classList.add('show')}
