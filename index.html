@@ -1754,4 +1754,59 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
 </script>
 
 
+
+<script id="online-avatar-presence-compat-v1">
+/* Keep the local player visible immediately and carry the real saved avatar
+   through the presence payload, including legacy presence records. */
+(function(){
+  const originalDogData=window.onlineDogData;
+  window.onlineDogData=function(){
+    let shared={};
+    try{shared=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}')}catch(e){}
+    const base=typeof originalDogData==='function'?originalDogData():{};
+    const svg=typeof shared.avatarSvg==='string'&&shared.avatarSvg.length<=60000&&/^\s*<svg\b/i.test(shared.avatarSvg)?shared.avatarSvg:'';
+    return Object.assign({},base,{avatarSvg:svg||base.avatarSvg||''});
+  };
+  window.loadOnlinePlayers=async function(){
+    const token=localStorage.getItem('dreamWorldSessionV1'),mapAtStart=onlineMapId;
+    if(!token||!mapAtStart)return;
+    const requestSeq=++onlinePlayersRequestSeq;
+    let players=[];
+    try{
+      const res=await fetch(DREAMWORLD_API+'/online/players?map='+encodeURIComponent(mapAtStart),{
+        headers:{Authorization:'Bearer '+token},cache:'no-store'
+      });
+      const data=await res.json();
+      if(requestSeq!==onlinePlayersRequestSeq||mapAtStart!==onlineMapId)return;
+      if(!res.ok)throw Error(data.error||'Could not load players');
+      players=Array.isArray(data.players)?data.players.slice():[];
+    }catch(e){
+      if(requestSeq!==onlinePlayersRequestSeq||mapAtStart!==onlineMapId)return;
+      $('onlineStatus').textContent='Player list unavailable — showing your character while reconnecting';
+    }
+    const myId=String((typeof playerId!=='undefined'&&playerId)||localStorage.getItem('dreamWorldPlayerIdV1')||'');
+    if(myId){
+      let shared={};
+      try{shared=JSON.parse(localStorage.getItem('dreamWorldSharedPlayer')||'{}')}catch(e){}
+      const localDog=window.onlineDogData();
+      const at=players.findIndex(p=>String(p&&p.playerId)===myId);
+      if(at>=0){
+        const serverPlayer=players[at]||{};
+        const serverDog=serverPlayer.dog&&typeof serverPlayer.dog==='object'?serverPlayer.dog:{};
+        players[at]=Object.assign({},serverPlayer,{
+          username:serverPlayer.username||shared.username||$('authUsername')?.value||'My Player',
+          dog:Object.assign({},serverDog,localDog,{avatarSvg:localDog.avatarSvg||serverDog.avatarSvg||''})
+        });
+      }else{
+        players.push({
+          playerId:myId,
+          username:shared.username||localStorage.getItem('dwOnlineUsername')||$('authUsername')?.value||'My Player',
+          x:Number(onlineX)||8,y:Number(onlineY)||78,dog:localDog,updatedAt:Date.now()
+        });
+      }
+    }
+    renderOnlinePlayers(players);
+  };
+})();
+</script>
 </body></html>
