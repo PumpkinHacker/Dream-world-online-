@@ -1829,6 +1829,7 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
 @keyframes dwEventFloat{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-9px) rotate(8deg)}}
 .dw-live-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
 .dw-live-actions button{border-radius:12px;padding:9px 12px;background:linear-gradient(#80d5ff,#328ded)}
+#online.screen.active #onlineWorldArea .dw-event-control{min-height:42px;padding:9px 13px;border:2px solid #fff;border-radius:14px;background:linear-gradient(#ffe88a,#ffb52e);color:#754900;font-weight:950;box-shadow:0 3px 0 #b47b22;touch-action:manipulation}
 @media(max-width:650px){.dw-feature-grid{grid-template-columns:1fr}.dw-feature-card{padding:12px}.dw-quest-row,.dw-player-row{align-items:flex-start}.dw-event-banner{top:10%;font-size:.86rem}}
 </style>
 <section id="dreamFeatures" class="screen">
@@ -1942,11 +1943,11 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
  const oldRender=window.renderOnlinePlayers;
  if(typeof oldRender==='function')window.renderOnlinePlayers=function(players){livePlayers=Array.isArray(players)?players.slice():[];oldRender.apply(this,arguments);const me=String(window.playerId||localStorage.getItem('dreamWorldPlayerIdV1')||'');if(livePlayers.some(p=>String(p.playerId)!==me))state.metPlayers=true;save();renderQuests();renderFashion()};
  const oldEnter=window.enterOnlineMap;
- if(typeof oldEnter==='function')window.enterOnlineMap=async function(){state.visitMap=true;save();renderQuests();const result=await oldEnter.apply(this,arguments);updateEventPanel();paintMapEvent();return result};
+ if(typeof oldEnter==='function')window.enterOnlineMap=async function(mapId){const result=await oldEnter.apply(this,arguments);const area=$id('onlineWorldArea');if(onlineMapId===mapId&&area&&!area.hidden){state.visitMap=true;save();renderQuests();updateEventPanel();paintMapEvent()}return result};
  const home=document.querySelector('#home .online-home-grid');
  if(home&&!$id('dwActivitiesButton')){const b=document.createElement('button');b.type='button';b.id='dwActivitiesButton';b.className='bigbtn gold';b.textContent='Daily Quests · Fashion · Live Events';b.addEventListener('click',()=>{prepareDay();renderQuests();renderFashion();updateEventPanel();showScreen('dreamFeatures')});home.appendChild(b)}
- const area=$id('onlineWorldArea');
- if(area&&!$id('dwMapEventButton')){const b=document.createElement('button');b.type='button';b.id='dwMapEventButton';b.className='bigbtn gold';b.style.marginTop='10px';b.textContent='Live World Event';b.addEventListener('click',()=>{updateEventPanel();if(slotInfo().active)window.dwJoinLiveEvent();else{showScreen('dreamFeatures');renderQuests();renderFashion()}});const heading=area.querySelector('.online-player-heading');if(heading)heading.insertAdjacentElement('beforebegin',b)}
+ const controls=$id('onlineWorldArea')?.querySelector('.online-controls');
+ if(controls&&!$id('dwMapEventButton')){const b=document.createElement('button');b.type='button';b.id='dwMapEventButton';b.className='dw-event-control';b.textContent='EVENT';b.setAttribute('aria-label','Open live world event');b.addEventListener('click',()=>{updateEventPanel();if(slotInfo().active)window.dwJoinLiveEvent();else{showScreen('dreamFeatures');renderQuests();renderFashion()}});controls.appendChild(b)}
  read();prepareDay();renderQuests();renderFashion();updateEventPanel();setInterval(()=>{updateEventPanel()},15000);
  document.addEventListener('visibilitychange',()=>{if(!document.hidden){updateEventPanel();renderQuests()}});
 })();
