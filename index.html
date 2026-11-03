@@ -1938,7 +1938,7 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
  window.dwJoinLiveEvent=function(){
   const info=slotInfo();
   if(!info.active){if(typeof toast==='function')toast('The next live event starts in '+fmt(info.next)+'.');updateEventPanel();return}
-  if(!window.onlineMapId){if(typeof toast==='function')toast('Enter an online map first to join the live event.');return}
+  if(typeof onlineMapId==='undefined'||!onlineMapId){if(typeof toast==='function')toast('Enter an online map first to join the live event.');return}
   paintMapEvent();if(typeof toast==='function')toast('You joined '+info.event+'! Find 3 sparkles in the map.');
   const area=$id('onlineWorldArea');if(area&&area.hidden){showScreen('online');}
   updateEventPanel();
@@ -1946,7 +1946,7 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
  const oldRender=window.renderOnlinePlayers;
  if(typeof oldRender==='function')window.renderOnlinePlayers=function(players){livePlayers=Array.isArray(players)?players.slice():[];oldRender.apply(this,arguments);const me=String(window.playerId||localStorage.getItem('dreamWorldPlayerIdV1')||'');if(livePlayers.some(p=>String(p.playerId)!==me))state.metPlayers=true;save();renderQuests();renderFashion()};
  const oldEnter=window.enterOnlineMap;
- if(typeof oldEnter==='function')window.enterOnlineMap=async function(){state.visitMap=true;save();renderQuests();const result=await oldEnter.apply(this,arguments);updateEventPanel();return result};
+ if(typeof oldEnter==='function')window.enterOnlineMap=async function(){state.visitMap=true;save();renderQuests();const result=await oldEnter.apply(this,arguments);updateEventPanel();paintMapEvent();return result};
  const home=document.querySelector('#home .online-home-grid');
  if(home&&!$id('dwActivitiesButton')){const b=document.createElement('button');b.type='button';b.id='dwActivitiesButton';b.className='bigbtn gold';b.textContent='Daily Quests · Fashion · Live Events';b.addEventListener('click',()=>{prepareDay();renderQuests();renderFashion();updateEventPanel();showScreen('dreamFeatures')});home.appendChild(b)}
  const area=$id('onlineWorldArea');
