@@ -1174,7 +1174,7 @@ function scheduleServerTokenSync(){
 async function logoutDreamWorld(){
   const token=localStorage.getItem('dreamWorldSessionV1');
   const button=$('logoutBtn');if(button){button.disabled=true;button.textContent='Logging out…'}
-  try{if(token)await fetch(DREAMWORLD_API+'/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+token}})}catch(e){}
+  try{if(typeof saveProgress==='function'&&playerId)saveProgress()}catch(e){}try{if(token)await fetch(DREAMWORLD_API+'/auth/logout',{method:'POST',headers:{Authorization:'Bearer '+token}})}catch(e){}
   localStorage.removeItem('dreamWorldSessionV1');localStorage.removeItem('dreamworld_account_token');localStorage.removeItem('dreamWorldPlayerIdV1');localStorage.removeItem('dreamworld_active_player_id');authSession=null;playerId=null;isDreamWorldAdmin=false;
   if(button){button.disabled=false;button.textContent='↪ Log out'}
   showAuth();
@@ -1204,7 +1204,7 @@ async function submitAuth(event){
   try{
     const data=await apiAuth(authMode==='signup'?'/auth/register':'/auth/login',{username,password});
     if(!data.token||!data.player||!data.player.playerId)throw new Error('The server response was incomplete. Please try again.');
-    authSession=data.token;localStorage.setItem('dreamWorldSessionV1',data.token);localStorage.setItem('dreamworld_account_token',data.token);setPlayerHud(data.player.playerId);
+    authSession=data.token;localStorage.setItem('dreamWorldSessionV1',data.token);localStorage.setItem('dreamworld_account_token',data.token);setPlayerHud(data.player.playerId);loadProgress();
     await loadServerTokenBalance();$('authPassword').value='';showScreen('home');refreshAdminAccess();
   }catch(err){$('authError').textContent=err.message||'Something went wrong. Please try again.'}
   finally{$('authSubmit').disabled=false;$('authSubmit').textContent=authMode==='signup'?'Create Account & Play 🐶':'Log In & Play 🐶'}
@@ -1516,11 +1516,11 @@ saveProgress=function(){try{const old=JSON.parse(localStorage.getItem('estherDre
 // Game initialization runs at the end, after all state variables are declared.
 // Dreamworld Deluxe: keep pretend progress on this device only.
 function saveProgress(){
-  try{localStorage.setItem('estherDreamworldV4',JSON.stringify({coins,col,accessory,skinName,ownedSkins,itemsOwned,levelDone,currentLevel,achievements,claimedAchievements,wordsSolved,achievementFlags,powers,activeBackground,selectedAnimal}));localStorage.setItem('estherDreamworldV5',JSON.stringify({coins,col,accessory,skinName,ownedSkins,itemsOwned,levelDone,currentLevel,achievements,claimedAchievements,wordsSolved,achievementFlags,powers,activeBackground,selectedAnimal}));}catch(e){}
+  try{const data={coins,col,accessory,skinName,ownedSkins,itemsOwned,levelDone,currentLevel,achievements,claimedAchievements,wordsSolved,achievementFlags,powers,activeBackground,selectedAnimal};const raw=JSON.stringify(data);localStorage.setItem('estherDreamworldV4',raw);localStorage.setItem('estherDreamworldV5',raw);const id=Number(playerId||localStorage.getItem('dreamWorldPlayerIdV1')||localStorage.getItem('dreamWorldPlayerIdV1'));if(Number.isSafeInteger(id)&&id>=0)localStorage.setItem('dwOnlineAccountSaveV1_'+id,raw);}catch(e){}
 }
 function loadProgress(){
   try{
-    const raw=localStorage.getItem('estherDreamworldV5')||localStorage.getItem('estherDreamworldV4')||localStorage.getItem('estherDreamworldV3');
+    const activeId=Number(playerId||localStorage.getItem('dreamWorldPlayerIdV1'));let raw=Number.isSafeInteger(activeId)&&activeId>=0?localStorage.getItem('dwOnlineAccountSaveV1_'+activeId):null;if(!raw&&activeId===6){raw=localStorage.getItem('dwOnlineAccountSaveV1_5');if(raw)localStorage.setItem('dwOnlineAccountSaveV1_6',raw)}if(!raw)raw=localStorage.getItem('estherDreamworldV5')||localStorage.getItem('estherDreamworldV4')||localStorage.getItem('estherDreamworldV3');
     const d=JSON.parse(raw||'null');
     try{const h=JSON.parse(localStorage.getItem('estherQuestionHistoryV1')||'[]');if(Array.isArray(h))questionHistory=h.filter(i=>Number.isInteger(i)&&i>=0&&i<qs.length)}catch(e){}
     if(d){
