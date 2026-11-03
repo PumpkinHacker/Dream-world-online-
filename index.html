@@ -1809,4 +1809,151 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
   };
 })();
 </script>
+
+<style id="dream-world-community-style-v1">
+#dreamFeatures .panel{width:min(940px,100%)}
+.dw-feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.dw-feature-card{background:linear-gradient(145deg,#fff,#edf8ff);border:2px solid #d2eaff;border-radius:18px;padding:14px;color:#285781;box-shadow:0 3px 0 #b5d8f2}
+.dw-feature-card h3{margin:0 0 7px;color:#216ec0;font-size:1.08rem}
+.dw-feature-card p{margin:0 0 10px;font-size:.88rem;line-height:1.4;color:#5d7899}
+.dw-quest-row,.dw-player-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;margin:8px 0;background:#f5fbff;border:1px solid #d5eaff;border-radius:13px}
+.dw-quest-row small{display:block;color:#6882a3;font-weight:750;margin-top:3px}
+.dw-quest-row button,.dw-player-row button{border-radius:12px;padding:8px 12px;background:linear-gradient(#ffe88a,#ffb52e);color:#754900;white-space:nowrap}
+.dw-quest-row button:disabled,.dw-player-row button:disabled{opacity:.65;filter:grayscale(.3)}
+.dw-status-pill{display:inline-flex;padding:5px 10px;border-radius:999px;background:#e7f8ed;color:#26784b;font-size:.78rem;font-weight:950}
+.dw-muted{color:#6983a2;font-size:.88rem;font-weight:750}
+.dw-event-banner{position:absolute;z-index:40;top:12%;left:50%;transform:translateX(-50%);width:min(420px,82%);padding:10px 14px;border:2px solid #fff;border-radius:16px;background:linear-gradient(110deg,#fff1a9f2,#ffb5dcf2);box-shadow:0 4px 0 #9b6cb366;text-align:center;color:#673f79;font-weight:1000;pointer-events:none}
+.dw-event-banner small{display:block;font-size:.76rem;margin-top:3px}
+.dw-event-token{position:absolute;z-index:41;width:46px;height:46px;border:2px solid white;border-radius:50%;background:linear-gradient(#fff5a6,#ffc94e);color:#7b4b00;font-size:1.35rem;box-shadow:0 4px 0 #9b6a3e66;animation:dwEventFloat 1.7s ease-in-out infinite}
+.dw-event-token:nth-of-type(even){animation-delay:.35s}
+@keyframes dwEventFloat{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-9px) rotate(8deg)}}
+.dw-live-actions{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.dw-live-actions button{border-radius:12px;padding:9px 12px;background:linear-gradient(#80d5ff,#328ded)}
+@media(max-width:650px){.dw-feature-grid{grid-template-columns:1fr}.dw-feature-card{padding:12px}.dw-quest-row,.dw-player-row{align-items:flex-start}.dw-event-banner{top:10%;font-size:.86rem}}
+</style>
+<section id="dreamFeatures" class="screen">
+ <div class="panel">
+  <div class="topbar"><button type="button" class="closebtn" onclick="showScreen('home')">‹</button><h2>Dream World Activities</h2><div style="width:43px"></div></div>
+  <div class="dw-feature-grid">
+   <article class="dw-feature-card"><h3>Daily Quests</h3><p>Complete activities in the online world and collect daily Dream Badges.</p><div id="dwQuestStreak" class="dw-status-pill">Daily streak: 0</div><div id="dwQuestList"></div><p id="dwQuestReward" class="dw-muted">Dream Badges: 0</p></article>
+   <article class="dw-feature-card"><h3>Fashion Competition</h3><p id="dwFashionTheme">Today's theme: loading…</p><p id="dwFashionHint" class="dw-muted">Join an online map to see the players currently in your server and vote.</p><div id="dwFashionPlayers"></div><button type="button" class="bigbtn pink" onclick="dwRefreshFashion()">Refresh contestants</button></article>
+   <article class="dw-feature-card"><h3>Live World Events</h3><p id="dwEventSummary">Checking the shared event schedule…</p><div id="dwEventCountdown" class="dw-status-pill">Checking event time</div><p class="dw-muted">Events run on the same UTC schedule for every player. Join an online map while an event is live to see it in the world.</p><button type="button" class="bigbtn purple" onclick="dwJoinLiveEvent()">Join live event</button></article>
+  </div>
+  <p class="footer-note">Your account, player ID, outfit, and online map progress are kept separate from these activity records.</p>
+ </div>
+</section>
+<script id="dream-world-community-features-v1">
+(function(){
+ 'use strict';
+ const KEY='dwCommunityProgressV1';
+ const themes=['Cosmic Colors','Cozy Cottage','Halloween Spirit','Ocean Explorer','Royal Fantasy','Candy Kingdom'];
+ const events=['Starfall Festival','Rainbow Parade','Treasure Rush'];
+ let state={day:'',streak:0,lastDay:'',badges:0,claimed:[],visitMap:false,metPlayers:false,fashion:false,event:false,eventFinds:0};
+ let livePlayers=[];
+ let currentEventSlot=-1;
+ const $id=id=>document.getElementById(id);
+ const dayKey=()=>new Date().toISOString().slice(0,10);
+ const read=()=>{try{const x=JSON.parse(localStorage.getItem(KEY)||'null');if(x&&typeof x==='object')state=Object.assign(state,x)}catch(e){}};
+ const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){}};
+ function prepareDay(){
+  const today=dayKey();
+  if(state.day!==today){
+   const prior=state.lastDay;
+   const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);
+   state.streak=prior===yesterday?Number(state.streak||0)+1:1;
+   state.lastDay=today;state.day=today;state.claimed=[];state.visitMap=false;state.metPlayers=false;state.fashion=false;state.event=false;state.eventFinds=0;save();
+  }
+ }
+ function questData(){return [
+  {id:'map',name:'World Explorer',desc:'Visit any online map.',done:!!state.visitMap},
+  {id:'players',name:'Make New Friends',desc:'Share a map with at least one other player.',done:!!state.metPlayers},
+  {id:'fashion',name:'Style Star',desc:'Take part in today’s fashion competition.',done:!!state.fashion},
+  {id:'event',name:'Event Adventurer',desc:'Collect 3 event sparkles during a live event.',done:!!state.event}
+ ]}
+ function renderQuests(){
+  prepareDay();const list=$id('dwQuestList');if(!list)return;
+  $id('dwQuestStreak').textContent='Daily streak: '+state.streak;
+  list.innerHTML='';
+  questData().forEach(q=>{
+   const claimed=state.claimed.includes(q.id),row=document.createElement('div');row.className='dw-quest-row';
+   const copy=document.createElement('div'),name=document.createElement('b'),desc=document.createElement('small');
+   name.textContent=q.name;desc.textContent=q.desc;copy.append(name,desc);
+   const btn=document.createElement('button');btn.type='button';btn.textContent=claimed?'Collected':q.done?'Claim badge':'In progress';btn.disabled=!q.done||claimed;
+   btn.addEventListener('click',()=>{if(!q.done||state.claimed.includes(q.id))return;state.claimed.push(q.id);state.badges=Number(state.badges||0)+1;save();renderQuests();if(typeof toast==='function')toast('Dream Badge collected!')});
+   row.append(copy,btn);list.appendChild(row);
+  });
+  $id('dwQuestReward').textContent='Dream Badges collected: '+Number(state.badges||0);
+ }
+ function themeForDay(){const n=Math.floor(Date.now()/86400000);return themes[n%themes.length]}
+ function renderFashion(){
+  const t=$id('dwFashionTheme');if(t)t.textContent='Today’s theme: '+themeForDay();
+  const host=$id('dwFashionPlayers');if(!host)return;host.innerHTML='';
+  const me=String(window.playerId||localStorage.getItem('dreamWorldPlayerIdV1')||'');
+  const candidates=livePlayers.filter(p=>p&&String(p.playerId)!==me);
+  if(!document.getElementById('onlineWorldArea')?.hidden && me){
+   const mine=livePlayers.find(p=>String(p.playerId)===me);
+   if(mine)candidates.unshift(mine);
+  }
+  if(!candidates.length){host.innerHTML='<p class="dw-muted">Enter an online map to load real contestants. Your current map players will appear here.</p>';return}
+  const votedKey='dwFashionVote:'+dayKey();
+  let voted='';try{voted=localStorage.getItem(votedKey)||''}catch(e){}
+  candidates.slice(0,20).forEach(p=>{
+   const row=document.createElement('div');row.className='dw-player-row';
+   const label=document.createElement('b');label.textContent=(p.username||'Player')+' · ID '+String(p.playerId||'?');
+   const btn=document.createElement('button');btn.type='button';btn.textContent=voted===String(p.playerId)?'Voted':'Vote';
+   btn.disabled=!!voted;
+   btn.addEventListener('click',()=>{if(voted)return;try{localStorage.setItem(votedKey,String(p.playerId))}catch(e){}voted=String(p.playerId);state.fashion=true;save();renderFashion();renderQuests();if(typeof toast==='function')toast('Your fashion vote was saved on this device.')});
+   row.append(label,btn);host.appendChild(row);
+  });
+  const hint=$id('dwFashionHint');if(hint)hint.textContent='Contestants are the players currently visible on your online map. One vote per day on this device.';
+ }
+ window.dwRefreshFashion=function(){renderFashion();if(typeof toast==='function')toast('Contestants refreshed from your current map.')};
+ function slotInfo(){
+  const now=Date.now(),slot=Math.floor(now/1800000),within=now%1800000,active=within<720000;
+  const next=active?0:1800000-within;
+  return {slot,active,next,event:events[((slot%events.length)+events.length)%events.length]};
+ }
+ function fmt(ms){const s=Math.max(0,Math.ceil(ms/1000));return Math.floor(s/60)+'m '+String(s%60).padStart(2,'0')+'s'}
+ function updateEventPanel(){
+  const info=slotInfo(),summary=$id('dwEventSummary'),count=$id('dwEventCountdown');
+  if(summary)summary.textContent=info.active?info.event+' is happening now in every online map!':'Next event: '+events[(((info.slot+1)%events.length)+events.length)%events.length]+'.';
+  if(count)count.textContent=info.active?'LIVE NOW · '+fmt(720000-(Date.now()%1800000)):'Starts in '+fmt(info.next);
+  if(info.slot!==currentEventSlot){currentEventSlot=info.slot;paintMapEvent()}
+ }
+ function paintMapEvent(){
+  const canvas=$id('onlineWorldCanvas');if(!canvas)return;
+  canvas.querySelectorAll('.dw-event-banner,.dw-event-token').forEach(n=>n.remove());
+  const info=slotInfo();if(!info.active)return;
+  const banner=document.createElement('div');banner.className='dw-event-banner';banner.textContent=info.event;
+  const sub=document.createElement('small');sub.textContent='LIVE WORLD EVENT · Collect 3 sparkles';banner.appendChild(sub);canvas.appendChild(banner);
+  [[18,48],[39,35],[63,48],[84,34]].forEach(([x,y],i)=>{
+   const token=document.createElement('button');token.type='button';token.className='dw-event-token';token.textContent='✦';token.setAttribute('aria-label','Collect event sparkle '+(i+1));token.style.left=x+'%';token.style.top=y+'%';
+   token.addEventListener('click',()=>{
+    if(token.dataset.found)return;token.dataset.found='1';token.disabled=true;token.textContent='✓';state.eventFinds=Number(state.eventFinds||0)+1;
+    if(state.eventFinds>=3)state.event=true;save();renderQuests();if(typeof toast==='function')toast('Event sparkle collected! '+Math.min(3,state.eventFinds)+'/3');
+   });
+   canvas.appendChild(token);
+  });
+ }
+ window.dwJoinLiveEvent=function(){
+  const info=slotInfo();
+  if(!info.active){if(typeof toast==='function')toast('The next live event starts in '+fmt(info.next)+'.');updateEventPanel();return}
+  if(!window.onlineMapId){if(typeof toast==='function')toast('Enter an online map first to join the live event.');return}
+  paintMapEvent();if(typeof toast==='function')toast('You joined '+info.event+'! Find 3 sparkles in the map.');
+  const area=$id('onlineWorldArea');if(area&&area.hidden){showScreen('online');}
+  updateEventPanel();
+ };
+ const oldRender=window.renderOnlinePlayers;
+ if(typeof oldRender==='function')window.renderOnlinePlayers=function(players){livePlayers=Array.isArray(players)?players.slice():[];oldRender.apply(this,arguments);const me=String(window.playerId||localStorage.getItem('dreamWorldPlayerIdV1')||'');if(livePlayers.some(p=>String(p.playerId)!==me))state.metPlayers=true;save();renderQuests();renderFashion()};
+ const oldEnter=window.enterOnlineMap;
+ if(typeof oldEnter==='function')window.enterOnlineMap=async function(){state.visitMap=true;save();renderQuests();const result=await oldEnter.apply(this,arguments);updateEventPanel();return result};
+ const home=document.querySelector('#home .online-home-grid');
+ if(home&&!$id('dwActivitiesButton')){const b=document.createElement('button');b.type='button';b.id='dwActivitiesButton';b.className='bigbtn gold';b.textContent='Daily Quests · Fashion · Live Events';b.addEventListener('click',()=>{prepareDay();renderQuests();renderFashion();updateEventPanel();showScreen('dreamFeatures')});home.appendChild(b)}
+ const area=$id('onlineWorldArea');
+ if(area&&!$id('dwMapEventButton')){const b=document.createElement('button');b.type='button';b.id='dwMapEventButton';b.className='bigbtn gold';b.style.marginTop='10px';b.textContent='Live World Event';b.addEventListener('click',()=>{updateEventPanel();if(slotInfo().active)window.dwJoinLiveEvent();else{showScreen('dreamFeatures');renderQuests();renderFashion()}});const heading=area.querySelector('.online-player-heading');if(heading)heading.insertAdjacentElement('beforebegin',b)}
+ read();prepareDay();renderQuests();renderFashion();updateEventPanel();setInterval(()=>{updateEventPanel()},15000);
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden){updateEventPanel();renderQuests()}});
+})();
+</script>
+
 </body></html>
