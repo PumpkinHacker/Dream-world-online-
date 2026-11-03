@@ -1850,7 +1850,7 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
  const events=['Starfall Festival','Rainbow Parade','Treasure Rush'];
  let state={day:'',streak:0,lastDay:'',badges:0,claimed:[],visitMap:false,metPlayers:false,fashion:false,event:false,eventFinds:0};
  let livePlayers=[];
- let currentEventSlot=-1;
+ let currentEventSlot=-1,currentEventActive=null;
  const $id=id=>document.getElementById(id);
  const dayKey=()=>new Date().toISOString().slice(0,10);
  const read=()=>{try{const x=JSON.parse(localStorage.getItem(KEY)||'null');if(x&&typeof x==='object')state=Object.assign(state,x)}catch(e){}};
@@ -1890,11 +1890,7 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
   const host=$id('dwFashionPlayers');if(!host)return;host.innerHTML='';
   const me=String(window.playerId||localStorage.getItem('dreamWorldPlayerIdV1')||'');
   const candidates=livePlayers.filter(p=>p&&String(p.playerId)!==me);
-  if(!document.getElementById('onlineWorldArea')?.hidden && me){
-   const mine=livePlayers.find(p=>String(p.playerId)===me);
-   if(mine)candidates.unshift(mine);
-  }
-  if(!candidates.length){host.innerHTML='<p class="dw-muted">Enter an online map to load real contestants. Your current map players will appear here.</p>';return}
+    if(!candidates.length){host.innerHTML='<p class="dw-muted">Enter an online map to load real contestants. Your current map players will appear here.</p>';return}
   const votedKey='dwFashionVote:'+dayKey();
   let voted='';try{voted=localStorage.getItem(votedKey)||''}catch(e){}
   candidates.slice(0,20).forEach(p=>{
@@ -1918,7 +1914,7 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
   const info=slotInfo(),summary=$id('dwEventSummary'),count=$id('dwEventCountdown');
   if(summary)summary.textContent=info.active?info.event+' is happening now in every online map!':'Next event: '+events[(((info.slot+1)%events.length)+events.length)%events.length]+'.';
   if(count)count.textContent=info.active?'LIVE NOW · '+fmt(720000-(Date.now()%1800000)):'Starts in '+fmt(info.next);
-  if(info.slot!==currentEventSlot){currentEventSlot=info.slot;paintMapEvent()}
+  if(info.slot!==currentEventSlot||info.active!==currentEventActive){currentEventSlot=info.slot;currentEventActive=info.active;paintMapEvent()}
  }
  function paintMapEvent(){
   const canvas=$id('onlineWorldCanvas');if(!canvas)return;
