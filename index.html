@@ -132,7 +132,11 @@ button:active{transform:translateY(3px) scale(.98);box-shadow:0 2px 0 #153f7440}
 
 /* The online game now renders the exact shared Dream World avatar in every player preview. */
 #homeHero svg,#customPreview svg,#myPlayerArt svg,#shopPreviewPup svg,#spacePreviewPup svg{display:block!important;width:min(100%,190px)!important;height:auto!important;max-height:230px!important;object-fit:contain!important}#homeHero .puppy,#customPreview .puppy,#myPlayerArt .puppy{display:none!important}
-.modern-creator-bridge{text-align:center;padding:22px 12px 30px}.creator-bridge-art{font-size:clamp(3rem,14vw,5.5rem);padding:22px;border-radius:24px;background:linear-gradient(135deg,#d7f7ff,#eee3ff,#ffe3f2);margin-bottom:18px}.modern-creator-bridge h3{font-size:1.35rem;color:var(--ink,#37305e)}.modern-creator-bridge p{line-height:1.55;font-weight:800;color:var(--muted,#716a91);max-width:520px;margin:10px auto 22px}.modern-creator-bridge .bigbtn{width:100%;max-width:440px;margin:8px auto;display:block}</style>
+.modern-creator-bridge{text-align:center;padding:22px 12px 30px}.creator-bridge-art{font-size:clamp(3rem,14vw,5.5rem);padding:22px;border-radius:24px;background:linear-gradient(135deg,#d7f7ff,#eee3ff,#ffe3f2);margin-bottom:18px}.modern-creator-bridge h3{font-size:1.35rem;color:var(--ink,#37305e)}.modern-creator-bridge p{line-height:1.55;font-weight:800;color:var(--muted,#716a91);max-width:520px;margin:10px auto 22px}.modern-creator-bridge .bigbtn{width:100%;max-width:440px;margin:8px auto;display:block}
+/* Keep the online world fitted to modern mobile browser viewports. */
+@supports(height:100dvh){html,body,#app{height:100dvh;min-height:100dvh}}
+html,body,#app{max-width:100%;overscroll-behavior:none}
+</style>
 <style id="esther-deluxe-design">
 :root{--navy:#14396f;--blue:#177be0;--pink:#f34f9e;--purple:#7951dc;--gold:#ffb929;--green:#27c86b}
 body{font-family:ui-rounded,"Trebuchet MS",system-ui,sans-serif;letter-spacing:.1px}
@@ -1953,4 +1957,13 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
 })();
 </script>
 
+
+<script>
+(function(){
+ function preventDreamWorldPageZoom(e){if(e.cancelable)e.preventDefault();}
+ document.addEventListener("gesturestart",preventDreamWorldPageZoom,{passive:false});
+ document.addEventListener("gesturechange",preventDreamWorldPageZoom,{passive:false});
+ document.addEventListener("gestureend",preventDreamWorldPageZoom,{passive:false});
+})();
+</script>
 </body></html>
