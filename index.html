@@ -1524,12 +1524,38 @@ saveProgress=function(){try{const old=JSON.parse(localStorage.getItem('estherDre
 
 // Game initialization runs at the end, after all state variables are declared.
 // Dreamworld Deluxe: keep pretend progress on this device only.
+function readProgressRaw(key){
+  const candidates=[localStorage.getItem(key),localStorage.getItem(key+"_backup")];
+  for(let i=0;i<candidates.length;i++){
+    const raw=candidates[i];if(!raw)continue;
+    try{const value=JSON.parse(raw);if(value&&typeof value==="object"&&!Array.isArray(value)){if(i===1)localStorage.setItem(key,raw);return raw}}catch(e){}
+  }
+  return null;
+}
+function writeProgressRaw(key,raw){
+  const previous=localStorage.getItem(key);
+  if(previous&&previous!==raw){try{const value=JSON.parse(previous);if(value&&typeof value==="object"&&!Array.isArray(value))localStorage.setItem(key+"_backup",previous)}catch(e){}}
+  localStorage.setItem(key,raw);
+}
 function saveProgress(){
-  try{const data={coins,col,accessory,skinName,ownedSkins,itemsOwned,levelDone,currentLevel,achievements,claimedAchievements,wordsSolved,achievementFlags,powers,activeBackground,selectedAnimal};const raw=JSON.stringify(data);localStorage.setItem('estherDreamworldV4',raw);localStorage.setItem('estherDreamworldV5',raw);const id=Number(playerId||localStorage.getItem('dreamWorldPlayerIdV1')||localStorage.getItem('dreamWorldPlayerIdV1'));if(Number.isSafeInteger(id)&&id>=0)localStorage.setItem('dwOnlineAccountSaveV1_'+id,raw);}catch(e){}
+  try{
+    const data={coins,col,accessory,skinName,ownedSkins,itemsOwned,levelDone,currentLevel,achievements,claimedAchievements,wordsSolved,achievementFlags,powers,activeBackground,selectedAnimal};
+    const raw=JSON.stringify(data);
+    writeProgressRaw('estherDreamworldV4',raw);
+    writeProgressRaw('estherDreamworldV5',raw);
+    const id=Number(playerId||localStorage.getItem('dreamWorldPlayerIdV1'));
+    if(Number.isSafeInteger(id)&&id>=0)writeProgressRaw('dwOnlineAccountSaveV1_'+id,raw);
+  }catch(e){console.warn('Dream World save could not be written:',e)}
 }
 function loadProgress(){
   try{
-    const activeId=Number(playerId||localStorage.getItem('dreamWorldPlayerIdV1'));let raw=Number.isSafeInteger(activeId)&&activeId>=0?localStorage.getItem('dwOnlineAccountSaveV1_'+activeId):null;if(!raw&&activeId===6){raw=localStorage.getItem('dwOnlineAccountSaveV1_5');if(raw)localStorage.setItem('dwOnlineAccountSaveV1_6',raw)}if(!raw)raw=localStorage.getItem('estherDreamworldV5')||localStorage.getItem('estherDreamworldV4')||localStorage.getItem('estherDreamworldV3');
+    const activeId=Number(playerId||localStorage.getItem('dreamWorldPlayerIdV1'));
+    let raw=Number.isSafeInteger(activeId)&&activeId>=0?readProgressRaw('dwOnlineAccountSaveV1_'+activeId):null;
+    if(!raw&&activeId===6){
+      raw=readProgressRaw('dwOnlineAccountSaveV1_5');
+      if(raw)writeProgressRaw('dwOnlineAccountSaveV1_6',raw);
+    }
+    if(!raw)raw=readProgressRaw('estherDreamworldV5')||readProgressRaw('estherDreamworldV4')||readProgressRaw('estherDreamworldV3');
     const d=JSON.parse(raw||'null');
     try{const h=JSON.parse(localStorage.getItem('estherQuestionHistoryV1')||'[]');if(Array.isArray(h))questionHistory=h.filter(i=>Number.isInteger(i)&&i>=0&&i<qs.length)}catch(e){}
     if(d){
@@ -1539,8 +1565,15 @@ function loadProgress(){
       skinName=typeof d.skinName==='string'?d.skinName:skinName;
       ownedSkins=Array.isArray(d.ownedSkins)?[...new Set(['Classic Pup',...d.ownedSkins])]:ownedSkins;
       itemsOwned=Array.isArray(d.itemsOwned)?[...new Set(d.itemsOwned)]:itemsOwned;
-      levelDone=d.levelDone&&typeof d.levelDone==='object'?d.levelDone:{};achievements={...achievements,...(d.achievements||{})};claimedAchievements={...(d.claimedAchievements||{})};wordsSolved=Number(d.wordsSolved)||0;achievementFlags={...achievementFlags,...(d.achievementFlags||{})};powers={...powers,...(d.powers||{})};
-      currentLevel=Math.min(14,Math.max(1,Number(d.currentLevel)||1));selectedAnimal=typeof d.selectedAnimal==='string'?d.selectedAnimal:'🐶';if(typeof d.activeBackground==='string'&&['garden','ocean','candy','forest','sunset','starry','halloween'].includes(d.activeBackground))activeBackground=d.activeBackground;
+      levelDone=d.levelDone&&typeof d.levelDone==='object'?d.levelDone:{};
+      achievements={...achievements,...(d.achievements||{})};
+      claimedAchievements={...(d.claimedAchievements||{})};
+      wordsSolved=Number(d.wordsSolved)||0;
+      achievementFlags={...achievementFlags,...(d.achievementFlags||{})};
+      powers={...powers,...(d.powers||{})};
+      currentLevel=Math.min(14,Math.max(1,Number(d.currentLevel)||1));
+      selectedAnimal=typeof d.selectedAnimal==='string'?d.selectedAnimal:'🐶';
+      if(typeof d.activeBackground==='string'&&['garden','ocean','candy','forest','sunset','starry','halloween'].includes(d.activeBackground))activeBackground=d.activeBackground;
       if(!localStorage.getItem('estherDreamworldCoinsResetV11')){
         coins=0;
         localStorage.setItem('estherDreamworldCoinsResetV11','1');
@@ -1552,7 +1585,7 @@ function loadProgress(){
       localStorage.setItem('estherDreamworldCoinsResetV11','1');
       saveProgress();
     }
-  }catch(e){}
+  }catch(e){console.warn('Dream World save recovery failed:',e)}
 }
 // A soft, playful click sound for buttons that do not already trigger their own sound.
 // Uses Web Audio, so no external sound files or network requests are needed.
