@@ -728,6 +728,13 @@ body:before{content:"";background:radial-gradient(ellipse at 12% 14%,#d58a43 0 5
 #authScreen .bigbtn,#authScreen button[type="submit"]{background:linear-gradient(115deg,#91a979,#647f54)!important;color:#fffaf0!important}
 #home.screen.active .logo{color:#a65332!important}
 </style>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="./dreamworld-icon.svg">
+<link rel="apple-touch-icon" href="./dreamworld-icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="DW Online">
+<meta name="mobile-web-app-capable" content="yes">
 </head>
 <body><div id="app">
 <div id="playerHud" aria-live="polite"><span id="playerIdLabel">Player ID: —</span><span id="fpsLabel">FPS: —</span></div><button id="logoutBtn" type="button" onclick="logoutDreamWorld()" aria-label="Log out of Dream World">↪ Log out</button>
@@ -2034,5 +2041,10 @@ function resetCustomLook(){col='#42a5ed';skinName='Classic Pup';accessory='🎀'
  document.addEventListener("gesturechange",preventDreamWorldPageZoom,{passive:false});
  document.addEventListener("gestureend",preventDreamWorldPageZoom,{passive:false});
 })();
+</script>
+<script>
+if("serviceWorker" in navigator && location.protocol==="https:"){
+ window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js",{scope:"./"}).catch(error=>console.warn("Dream World offline install support:",error)));
+}
 </script>
 </body></html>
